@@ -1,0 +1,13 @@
+[Unit]
+Description=[RecomBot getserver]
+
+[Service]
+Type=simple
+User=max
+WorkingDirectory=/home/max/recom
+ExecStart=/home/max/recom/getserver.sh
+UMask=000
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

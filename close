@@ -1,0 +1,1 @@
+sudo systemctl stop aiobot.service getserver.service workserver.service

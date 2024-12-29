@@ -1,0 +1,1 @@
+sudo systemctl restart aiobot.service getserver.service workserver.service
