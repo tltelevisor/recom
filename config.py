@@ -8,10 +8,10 @@ logger = logging.getLogger(__name__)
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 
-API_ID = os.getenv(API_ID)
-API_HASH = os.getenv(API_HASH)
-PHONE_NUMBER= os.getenv(PHONE_NUMBER)
-NAME = os.getenv(NAME)
+API_ID = os.getenv("API_ID")
+API_HASH = os.getenv("API_HASH")
+PHONE_NUMBER= os.getenv("PHONE_NUMBER")
+NAME = os.getenv("NAME")
 
 API_KEY = os.getenv("API_KEY")
 OPENAI_MODEL = 'gpt-4o'
