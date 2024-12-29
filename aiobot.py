@@ -1,6 +1,7 @@
 import asyncio, sqlite3, re
 from datetime import datetime
 from datetime import timedelta
+from time import sleep
 from aiogram import Bot, Dispatcher, types, F, Router
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton 
 from aiogram.types.input_file import FSInputFile
@@ -139,7 +140,7 @@ async def button_press(call: types.CallbackQuery):
         
 @dp.message()
 async def hndltext(message: types.Message):
-    # try:
+    try:
         # Текст сообщения боту или комментария (! - отделить) к пересылаемому сообщению
         msgtext = message.text
         shrttext = msgtext[:50] if msgtext else None
@@ -172,12 +173,18 @@ async def hndltext(message: types.Message):
                     cursor = conn.cursor()
                     cursor.execute("REPLACE INTO uspr (usid, chid, msid, text, sign, dtadd) VALUES (?, ?, ?, ?, ?, ?)", (user_id, idc, msid, msgtext, sign, datetime.now().isoformat()))
                     cursor.execute("REPLACE INTO mess (chid, msid, text, dtms, dtcl) VALUES (?, ?, ?, ?, ?)", (idc, msid, frwtext, datetime.isoformat(dtmes), datetime.now().isoformat()))
+                    conn.commit()
+                    conn.close()
                     if idc not in alchid: 
+                        conn = sqlite3.connect(DATABASE)
+                        cursor = conn.cursor()
                         # cursor.execute("REPLACE INTO chls (chid, chnm, title) VALUES (?, ?, ?)", (idm, name, title))
                         sql = f"REPLACE INTO chls (chid, chnm, title, url) VALUES ({idc}, '{name}', '{title}', '{churl}')"
                         cursor.execute(sql)
                         sql = f"REPLACE INTO usch (usid, chid) VALUES ({user_id}, {idc})"
                         cursor.execute(sql)
+                        conn.commit()
+                        conn.close()
                         logger.info(f"Канал {name} {idc} добавлен в список каналов {user_id}.")
                         if name == 'replase_to_invite_url':
                             mess = (f"Канал {title} добавлен в список каналов, но для получения "
@@ -205,8 +212,7 @@ async def hndltext(message: types.Message):
                         else:
                             mess = (f"Канал <a href='{churl}'>{title}</a> уже есть в списке каналов.\n"
                                 f"Сообщение '{shrttext}...' сохранено как образец для анализа")
-                    conn.commit()
-                    conn.close()
+
                 else:
                     logger.error(f"Ошибка добавления канала. Не найден ID канала. {message}")
                     mess = ("Ошибка добавления канала. Попробуйте еще раз.")
@@ -221,8 +227,9 @@ async def hndltext(message: types.Message):
             if text is not None:
                 mess = (f"Сообщение '{shrttext}...' сохранено как образец для анализа")
         await message.answer(mess)
-    # except Exception as err:
-    #     logger.error(f"{err}\n\n{message}")
+    except Exception as err:
+        await message.answer(mess)
+        logger.error(f"{err}\n\n{message}")
 
 def detect_formatting(text):
     markdown_special_chars = r"[_*[\]()~`>#+\-=|{}.!]"
@@ -268,6 +275,7 @@ async def send_mess():
                                    reply_markup=kbmess
                                    )
             save_sent_mess(eu[0], em)
+            sleep(5)
 
 @dp.callback_query(F.data.in_(['topic+','topic-','often+','often-']) )
 async def button_press(call: types.CallbackQuery):
@@ -277,7 +285,7 @@ async def button_press(call: types.CallbackQuery):
         
 
 async def main():
-    scheduler.add_job(send_mess, 'interval', seconds=10)
+    scheduler.add_job(send_mess, 'interval', seconds=60)
     scheduler.start()
     await bot.delete_webhook(drop_pending_updates=True)
     await dp.start_polling(bot)
