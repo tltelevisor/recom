@@ -1,11 +1,11 @@
 [Unit]
-Description=[RecomBot getserver]
+Description=[RecomBot go server]
 
 [Service]
 Type=simple
 User=max
 WorkingDirectory=/home/max/recom
-ExecStart=/home/max/recom/getserver.sh
+ExecStart=/home/max/recom/server
 UMask=000
 Restart=always
 
