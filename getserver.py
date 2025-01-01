@@ -6,6 +6,9 @@ from timesleep import time_to_sleep_f
 from time import sleep
 import sqlite3
 
+
+# Функцияз получения сообщений из каналов
+# Запускается на сервере, где база данных
 def getmess():
     while True:
         chls = ch_to_serv()

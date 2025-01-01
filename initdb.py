@@ -45,7 +45,6 @@ async def init_db():
                             active BOOLEAN default 1,
                             istowrk BOOLEAN default 1
                         )'''
-        #chnl_id INTEGER
         chls = '''CREATE TABLE IF NOT EXISTS chls (
                         chid INTEGER PRIMARY KEY,
                         chnm TEXT,

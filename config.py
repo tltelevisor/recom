@@ -26,7 +26,10 @@ OPENAI_MODEL = 'gpt-4o'
 from os.path import abspath, dirname, join
 BASE_DIR = dirname(abspath(__file__))
 FILES_DIR = join(BASE_DIR, 'files')
-DATABASE = join(BASE_DIR, 'recom.db')
+# DATABASE = join(BASE_DIR, 'recom.db')
+DATABASE = os.environ.get("DATABASE")
 CHANNELS = ['anatoly_nesmiyan', 'aviatorshina',]
 
 MSG_LIMIT = 1
+
+URL_CH = 'http://example.com/foo/bar'
