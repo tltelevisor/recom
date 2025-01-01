@@ -1,0 +1,11 @@
+aiogram==3.16.0
+APScheduler==3.11.0
+marko==2.1.2
+openai==1.58.1
+pydantic==2.10.4
+pyTelegramBotAPI==4.25.0
+python-dotenv==1.0.1
+python-telegram-bot==21.9
+Requests==2.32.3
+scipy==1.14.1
+Telethon==1.36.0
