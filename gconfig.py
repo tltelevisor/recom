@@ -16,7 +16,9 @@ API_HASH = os.environ.get("API_HASH")
 PHONE_NUMBER= os.environ.get("PHONE_NUMBER")
 NAME = os.environ.get("NAME")
 
-CHLST_URL='http://localhost:8384/chlst'
-SVMESS_URL='http://localhost:8384/svmess'
+# CHLST_URL='http://localhost:8384/chlst'
+# SVMESS_URL='http://localhost:8384/svmess'
+CHLST_URL='http://213.142.146.123:8384/chlst'
+SVMESS_URL='http://213.142.146.123:8384/svmess'
 MSG_LIMIT = 1
 
