@@ -15870,3 +15870,5 @@ __pycache__/gconfig.cpython-312.pyc
 anon.session-journal
 go.log
 read_go.me
+server
+getserver.sh
