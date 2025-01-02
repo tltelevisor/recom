@@ -209,8 +209,9 @@ def get_mess_to_send(usid):
                 WHERE m.chid in (
                 SELECT chid from usch WHERE usid = ?)
                 AND m.istsnd = 1
-                AND m.issnt = 0'''
-    cursor.execute(sql, (usid,))
+                AND m.issnt = 0
+                AND m.usid = ?'''
+    cursor.execute(sql, (usid, usid,))
     rows = cursor.fetchall()
     conn.commit()
     conn.close()
