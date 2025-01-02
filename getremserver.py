@@ -4,7 +4,7 @@ from datetime import datetime
 from timesleep import time_to_sleep_f
 from time import sleep
 import urllib.request, json
-import requests
+import requests, random
 
 # client = TelegramClient(StringSession(SESSION_STRING), api_id=API_ID, api_hash=API_HASH, device_model="Linux 5.15.0", system_version="Ubuntu 20.04.6 LTS")
 # client.session.save()
@@ -45,7 +45,9 @@ def getmess_remote():
                         else:
                             nmm += 1
                     logger.info(f"Добавлено {nmm} сообщений из канала {ch}")
-                    sleep(time_to_sleep_f(20)[2])
+                    ttsl = int(20 * (1 - random.uniform(0, 0.5))) #time_to_sleep_f(20)[2]
+                    logger.info(f"Sleep {ttsl} seconds")
+                    sleep(ttsl)
             except Exception as e:
                 logger.error(f"Ошибка получения сообщений: {e}, {ch}")
 

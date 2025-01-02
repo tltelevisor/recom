@@ -269,11 +269,14 @@ async def send_mess():
             else:
                     mess_ts = (f"<a href='{ch_nm_tl[2]}/{em[1]}'>{ch_nm_tl[1]}/{em[1]}</a> {ldtms} \n\n{text}")  
             # print(mess_ts)
-            await bot.send_message(chat_id=eu[0], 
-                                   text=mess_ts, 
-                                   parse_mode=formatting,
-                                   reply_markup=kbmess
-                                   )
+            try:
+                await bot.send_message(chat_id=eu[0], 
+                                    text=mess_ts, 
+                                    parse_mode=formatting,
+                                    reply_markup=kbmess
+                                    )
+            except Exception as e:
+                logger.error(f"Ошибка отправки сообщения: {e}, {mess_ts}, {formatting}")
             save_sent_mess(eu[0], em)
             sleep(5)
 
