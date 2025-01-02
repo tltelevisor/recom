@@ -71,6 +71,18 @@ func handleSVMess(w http.ResponseWriter, r *http.Request) {
 
 	sql := "INSERT INTO mess (chid, msid, text, dtms, dtcl) VALUES ($1, $2, $3, $4, $5)"
 	_, err = db.Exec(sql, msg.ChID, msg.MsId, msg.Text, msg.DtMs, msg.DtCl)
+
+	if err != nil {
+		response := Response{Success: false, Message: fmt.Sprintf("Insert failed: %v", err)}
+		w.WriteHeader(http.StatusInternalServerError)
+		json.NewEncoder(w).Encode(response)
+		log.Println("Insert failed:", err)
+		return
+	}
+
+	sql2 := "REPLACE INTO mesus (chid, msid, usid) SELECT $1, $2, usid from usch u WHERE u.chid = $3"
+	_, err = db.Exec(sql2, msg.ChID, msg.MsId, msg.ChID)
+
 	if err != nil {
 		response := Response{Success: false, Message: fmt.Sprintf("Insert failed: %v", err)}
 		w.WriteHeader(http.StatusInternalServerError)
