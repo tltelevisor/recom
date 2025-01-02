@@ -1,5 +1,5 @@
 from config import logger, API_ID, API_HASH, NAME, DATABASE
-from telethon import TelegramClient
+#from telethon import TelegramClient
 from initdb import get_users_to_work, get_mess_to_work, work_mess
 from datetime import datetime
 from timesleep import time_to_sleep_f

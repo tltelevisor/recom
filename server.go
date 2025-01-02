@@ -138,7 +138,7 @@ func Server() {
                     AND usrs.active <> 0
                     AND usrs.istowrk <> 0)
                 GROUP BY c.chid;`
-		log.Println(sql)
+		// log.Println(sql)
 		rows, err := db.Query(sql)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Ошибка выполнения запроса: %v", err), http.StatusInternalServerError)

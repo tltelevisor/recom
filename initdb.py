@@ -4,29 +4,29 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageH
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import sqlite3, asyncio
 from config import logger, DATABASE, CHANNELS, API_ID, API_HASH, NAME
-from telethon import TelegramClient
+#from telethon import TelegramClient
 
   
-async def get_chnl_id(chnl):
-    async with TelegramClient(NAME, API_ID, API_HASH) as client:
-        try:
-            channel = await client.get_entity(chnl)
-        except Exception as e:
-            logger.error(f"Ошибка получения канала: {e}")
-        return channel.id, channel.title
+# async def get_chnl_id(chnl):
+#     async with TelegramClient(NAME, API_ID, API_HASH) as client:
+#         try:
+#             channel = await client.get_entity(chnl)
+#         except Exception as e:
+#             logger.error(f"Ошибка получения канала: {e}")
+#         return channel.id, channel.title
 
-async def set_chanls():
-    chls = get_all_channels()
-    chnm_ls = [er[1] for er in chls] if chls else []
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    for chnl in CHANNELS:
-        if chnl not in chnm_ls:
-            chid, title = await get_chnl_id(chnl)
-            churl = f'https://t.me/{chnl}'
-            cursor.execute("REPLACE INTO chls (chid, chnm, title, url) VALUES (?, ?, ?, ?)", (chid, chnl, title, churl))
-            conn.commit()
-    conn.close()
+# async def set_chanls():
+#     chls = get_all_channels()
+#     chnm_ls = [er[1] for er in chls] if chls else []
+#     conn = sqlite3.connect(DATABASE)
+#     cursor = conn.cursor()
+#     for chnl in CHANNELS:
+#         if chnl not in chnm_ls:
+#             chid, title = await get_chnl_id(chnl)
+#             churl = f'https://t.me/{chnl}'
+#             cursor.execute("REPLACE INTO chls (chid, chnm, title, url) VALUES (?, ?, ?, ?)", (chid, chnl, title, churl))
+#             conn.commit()
+#     conn.close()
 
 # Создание базы данных для хранения предпочтений пользователей
 async def init_db():
@@ -103,7 +103,7 @@ async def init_db():
         cursor.execute(mess)
         cursor.execute(mesus)
         cursor.execute(uspr)
-        await set_chanls()
+        #await set_chanls()
         conn.commit()
         conn.close()
     except Exception as e:
