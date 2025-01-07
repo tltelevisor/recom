@@ -79,6 +79,7 @@ def url_filter(usid):
         conn.commit()
         conn.close()
         mess = f"Пройдите по <a href='http://{URL}:{PORT}/filter?hash={hash}'>ссылке</a> чтобы настроить фильтры."
+        # mess = f"http://{URL}:{PORT}/filter?hash={hash} ссылка чтобы настроить фильтры."
         return mess
 
 @dp.message(Command('start'))
