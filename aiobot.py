@@ -305,8 +305,8 @@ def date_to_local(iso8601_string, timezone_difference_hours = 3):
     # Преобразуем в нужный формат
     return adjusted_dt.strftime("%Y-%m-%d %H:%M:%S")
 
-kbmess = get_kb({"topic+":"+Тема","topic-":"-Тема","often+":"Чаще этот канал", "often-":"Реже этот канал"})
-
+# kbmess = get_kb({"topic+":"+Тема","topic-":"-Тема","often+":"Чаще этот канал", "often-":"Реже этот канал"})
+kbmess = get_kb({"topic+":"Тема+","topic-":"Тема-"})
 async def send_mess():
     logger.info(f"Очередная итерация отправки")
     usrs = get_users_to_send()
