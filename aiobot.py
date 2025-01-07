@@ -86,10 +86,10 @@ def url_filter(usid):
 async def cmd_start(message: types.Message):
     usrs = get_users()
     usid = [eu[0] for eu in usrs]
+    name = message.from_user.full_name
+    user_id = message.from_user.id
     if message.from_user.id not in usid:
         active, istowrk = True, True
-        user_id = message.from_user.id
-        name = message.from_user.full_name
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
         cursor.execute("REPLACE INTO usrs (usid, username, first_name, last_name, full_name, language_code, hash, lastlog) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
@@ -98,8 +98,15 @@ async def cmd_start(message: types.Message):
         conn.close()
         logger.info(f"Добавлен пользователь {name} {user_id}")
     else:
-        last_log(message.from_user.id)
-        hash_f(message.from_user.id)
+        # last_log(message.from_user.id)
+        # hash_f(message.from_user.id)
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        sql = f"UPDATE usrs SET username={message.from_user.username}, first_name={message.from_user.first_name}, last_name={message.from_user.last_name},full_name={name}, language_code={message.from_user.language_code}, hash='{str(uuid.uuid4())}',lastlog='{datetime.now().isoformat()}' WHERE usid={user_id}"
+        cursor.execute(sql)
+        conn.commit()
+        conn.close()
+        
         active, istowrk = get_status(message.from_user.id)
         if istowrk == False:
             conn = sqlite3.connect(DATABASE)
@@ -305,7 +312,7 @@ async def send_mess():
     usrs = get_users_to_send()
     logger.info(f"Пользователи: {usrs}")
     for eu in usrs:
-        # rule = get_sndrule(eu[0])
+        rule = get_sndrule(eu[0])
         mess = get_mess_to_send(eu[0])
         logger.info(f"Сообщения: {mess}")
         for em in mess:
