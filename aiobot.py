@@ -102,8 +102,8 @@ async def cmd_start(message: types.Message):
         # hash_f(message.from_user.id)
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
-        sql = f"UPDATE usrs SET username={message.from_user.username}, first_name={message.from_user.first_name}, last_name={message.from_user.last_name},full_name={name}, language_code={message.from_user.language_code}, hash='{str(uuid.uuid4())}',lastlog='{datetime.now().isoformat()}' WHERE usid={user_id}"
-        logger.info(sql)
+        sql = f"UPDATE usrs SET username='{message.from_user.username}', first_name='{message.from_user.first_name}', last_name='{message.from_user.last_name}',full_name='{name}', language_code='{message.from_user.language_code}', hash='{str(uuid.uuid4())}',lastlog='{datetime.now().isoformat()}' WHERE usid={user_id}"
+        # logger.info(sql)
         cursor.execute(sql)
         conn.commit()
         conn.close()
