@@ -319,6 +319,15 @@ func handlTest(w http.ResponseWriter, r *http.Request, usid int) {
 	w.Write(file)
 }
 
+// Перейти на https и установить Secure: true
+// cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration, Path: "/test", Secure: false}
+func set_cookie(w http.ResponseWriter, hash string) {
+	livingTime := 60 * time.Minute
+	expiration := time.Now().Add(livingTime)
+	cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration}
+	http.SetCookie(w, &cookie1)
+}
+
 func authorized(next func(http.ResponseWriter, *http.Request, int)) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("token")
@@ -330,10 +339,8 @@ func authorized(next func(http.ResponseWriter, *http.Request, int)) func(http.Re
 			log.Println("hash: ", hash)
 			usid := get_user(hash)
 			log.Printf("usid from cookies hash %v", usid)
-			if usid == 0 {
-				http.Redirect(w, r, "/login", http.StatusSeeOther)
-				return
-			} else {
+			if usid != 0 {
+				set_cookie(w, hash)
 				next(w, r, usid)
 				return
 			}
@@ -344,20 +351,13 @@ func authorized(next func(http.ResponseWriter, *http.Request, int)) func(http.Re
 
 		usid := get_user(hash)
 		log.Printf("usid from url hash %v", usid)
-		if usid == 0 {
-			http.Redirect(w, r, "/login", http.StatusSeeOther)
-			return
+		if usid != 0 {
+			set_cookie(w, hash)
+			next(w, r, usid)
 		}
 
-		livingTime := 60 * time.Minute
-		expiration := time.Now().Add(livingTime)
-		// Перейти на https и установить Secure: true
-		// cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration, Path: "/test", Secure: false}
-		cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration}
-
-		http.SetCookie(w, &cookie1)
-		next(w, r, usid)
-
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
 	}
 }
 
@@ -422,13 +422,22 @@ func Server() {
 	})
 
 	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/html")
-		w.Header().Set("charset", "utf8")
+		log.Println("/login", r.Method, r.RemoteAddr)
+		file, err := os.ReadFile("./web/login.html")
+		if err != nil {
+			file = []byte{}
+		}
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.WriteHeader(http.StatusOK)
-		log.Println("Войдите по ссылке Телеграм-бота...")
-		rustring := "Войдите по ссылке Телеграм-бота 'Настроить фильтры' https://t.me/Recom777bot"
-		// smile := '😀'
-		fmt.Fprintf(w, rustring)
+		w.Write(file)
+
+		// w.Header().Set("Content-Type", "text/html")
+		// w.Header().Set("charset", "utf8")
+		// w.WriteHeader(http.StatusOK)
+		// log.Println("Войдите по ссылке Телеграм-бота...")
+		// rustring := "Войдите по ссылке Телеграм-бота 'Настроить фильтры' https://t.me/Recom777bot"
+		// // smile := '😀'
+		// fmt.Fprintf(w, rustring)
 		// fmt.Fprintf(w, "%q", smile)
 	})
 
