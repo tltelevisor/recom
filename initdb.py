@@ -38,10 +38,10 @@ async def init_db():
                             last_name TEXT,
                             full_name TEXT,
                             language_code TEXT,
-                            isred BOOLEAN default 0,
+                            hash TEXT,
                             lastlog datetime,
-                            wrkrule TEXT,
-                            sndrule TEXT,
+                            wrkrule TEXT default '{"filter":"null"}',
+                            sndrule TEXT default '{}',
                             active BOOLEAN default 1,
                             istowrk BOOLEAN default 1
                         )'''

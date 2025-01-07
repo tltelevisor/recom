@@ -30,6 +30,10 @@ FILES_DIR = join(BASE_DIR, 'files')
 DATABASE = os.environ.get("DATABASE")
 CHANNELS = ['anatoly_nesmiyan', 'aviatorshina',]
 
+# Адрес сервера настройки фильтров
+URL = os.environ.get("URL")
+PORT = os.environ.get("PORT")
+
 MSG_LIMIT = 1
 
 URL_CH = 'http://example.com/foo/bar'

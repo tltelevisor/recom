@@ -14,7 +14,8 @@ import requests, random
 def cicle_getmess_remote():
     while True:
         getmess_remote()
-        tts = time_to_sleep_f()[2]
+        # tts = time_to_sleep_f()[2]
+        tts = int(360 * (1 - random.uniform(0, 0.5)))
         logger.info(f"Sleep {tts} seconds")
         sleep(tts)
 

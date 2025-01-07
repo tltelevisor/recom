@@ -1,4 +1,4 @@
-import asyncio, sqlite3, re
+import asyncio, sqlite3, re, uuid
 from datetime import datetime
 from datetime import timedelta
 from time import sleep
@@ -10,7 +10,7 @@ from aiogram.filters import Command
 from pprint import pprint
 from initdb import get_all_channels, get_user_channels, add_all, chedb, get_diff_all_user, get_users, del_all_ch, get_status
 from initdb import get_mess_to_send, get_users_to_send, get_text_mess_db, save_sent_mess, get_sndrule, get_ch_name_title
-from config import logger, BOT_TOKEN, DATABASE
+from config import logger, BOT_TOKEN, DATABASE, URL, PORT
 from telegram.helpers import escape_markdown
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 scheduler = AsyncIOScheduler(timezone='Europe/Moscow')
@@ -51,6 +51,36 @@ def get_kb(btns):
         keyboard =  InlineKeyboardMarkup(inline_keyboard = km)
         return keyboard
 
+# Обновляет дату последнего дейсвтия пользователя в Телеграм
+# Нужно для проверки hash
+def last_log(usid):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    sql = f"UPDATE usrs SET lastlog='{datetime.now().isoformat()}' WHERE usid={usid}"
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+    
+# Создает hash для пользователя
+def hash_f(usid):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    sql = f"UPDATE usrs SET hash='{str(uuid.uuid4())}' WHERE usid={usid}"
+    cursor.execute(sql)
+    conn.commit()
+    conn.close()
+    
+# Создает ссылку для настройки фильтров
+def url_filter(usid):
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        sql = f"SELECT hash from usrs WHERE usid={usid}"
+        hash = cursor.execute(sql).fetchone()[0]
+        conn.commit()
+        conn.close()
+        mess = f"Пройдите по <a href='http://{URL}:{PORT}/filter?hash={hash}'>ссылке</a> чтобы настроить фильтры."
+        return mess
+
 @dp.message(Command('start'))
 async def cmd_start(message: types.Message):
     usrs = get_users()
@@ -61,11 +91,14 @@ async def cmd_start(message: types.Message):
         name = message.from_user.full_name
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
-        cursor.execute("REPLACE INTO usrs (usid, username, first_name, last_name, full_name, language_code, isred, lastlog) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-            (user_id, message.from_user.username, message.from_user.first_name, message.from_user.last_name, name, message.from_user.language_code, True, datetime.now().isoformat()))
+        cursor.execute("REPLACE INTO usrs (usid, username, first_name, last_name, full_name, language_code, hash, lastlog) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+            (user_id, message.from_user.username, message.from_user.first_name, message.from_user.last_name, name, message.from_user.language_code, str(uuid.uuid4()), datetime.now().isoformat()))
         conn.commit()
+        conn.close()
         logger.info(f"Добавлен пользователь {name} {user_id}")
     else:
+        last_log(message.from_user.id)
+        hash_f(message.from_user.id)
         active, istowrk = get_status(message.from_user.id)
         if istowrk == False:
             conn = sqlite3.connect(DATABASE)
@@ -73,6 +106,7 @@ async def cmd_start(message: types.Message):
             sql = f"UPDATE usrs SET istowrk=1 WHERE usid={message.from_user.id}"
             cursor.execute(sql)
             conn.commit()
+            conn.close()
             logger.info(f"Пользователь {message.from_user.full_name} {message.from_user.id} возобновил рассылку рассылку")
     name = message.from_user.full_name
     if active:
@@ -83,6 +117,7 @@ async def cmd_start(message: types.Message):
         mess = (f"{mess}Просматриваемые каналы: {uchhttp}\n\n"
         f"Канал можно добавить, отправив в бот сообщение из нужного канала.\n"
         f"Это сообщение также будет использовано в алгоритмах фильтрации.")
+        mess = mess + '\n' + url_filter(message.from_user.id)
         if len(dchls) >= 1:
             dchhttp = ', '.join([f"<a href='https://t.me/{ch[1]}'>{ch[2]}</a>" for ch in dchls])
             mess += f"  \nДобавить все каналы из списка: {dchhttp}"
@@ -97,8 +132,9 @@ async def cmd_start(message: types.Message):
         mess = f"Ваша учетная запись заблокирована. Обратитесь к администратору."
         await message.answer(mess)
         
-@dp.callback_query(F.data.in_(['channels','addall','delall','stop']) )
+@dp.callback_query(F.data.in_(['channels','addall','delall','stop','filter']) )
 async def button_press(call: types.CallbackQuery):
+    last_log(call.from_user.id)
     if call.data == 'addall':
         add_all(call.from_user.id)
         uchls = get_user_channels(call.from_user.id)
@@ -134,12 +170,24 @@ async def button_press(call: types.CallbackQuery):
         sql = f"UPDATE usrs SET istowrk=0 WHERE usid={call.from_user.id}"
         cursor.execute(sql)
         conn.commit()
+        conn.close()
         logger.info(f"Пользователь {call.from_user.full_name} {call.from_user.id} приостановил рассылку")
         mess = f"Отправка сообщений остановлена. Введите /start чтобы возобновить рассылку."
+        await call.message.edit_text(mess)  
+    if call.data == 'filter':     
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        sql = f"SELECT hash from usrs WHERE usid={call.from_user.id}"
+        hash = cursor.execute(sql).fetchone()[0]
+        conn.commit()
+        conn.close()
+        # mess = f"Пройдите по ссылке http://{URL}/?usid={call.from_user.id}&hash={hash} чтобы настроить фильтры."
+        mess = f"Пройдите по ссылке http://{URL}:{PORT}/filter?hash={hash} чтобы настроить фильтры."
         await call.message.edit_text(mess)  
         
 @dp.message()
 async def hndltext(message: types.Message):
+    last_log(message.from_user.id)
     try:
         # Текст сообщения боту или комментария (! - отделить) к пересылаемому сообщению
         msgtext = message.text
@@ -282,9 +330,10 @@ async def send_mess():
 
 @dp.callback_query(F.data.in_(['topic+','topic-','often+','often-']) )
 async def button_press(call: types.CallbackQuery):
-        if call.data in ['topic+','topic-','often+','often-']:
-            mess = (f"Эта функция пока в разработке")
-            await call.message.answer(mess)
+    last_log(call.from_user.id)
+    if call.data in ['topic+','topic-','often+','often-']:
+        mess = (f"Эта функция пока в разработке")
+        await call.message.answer(mess)
         
 
 async def main():

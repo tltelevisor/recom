@@ -3,10 +3,14 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"time"
 
 	_ "github.com/mattn/go-sqlite3" // Или замените на драйвер для вашей БД
 )
@@ -110,17 +114,249 @@ func handleSVMess(w http.ResponseWriter, r *http.Request) {
 	// json.NewEncoder(w).Encode(response)
 }
 
-// func openDB() (*sql.DB, error) {
-// 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-// 		dbHost, dbPort, dbUser, dbPassword, dbName)
-// 	return sql.Open("postgres", psqlInfo)
+// Главный обработчик для отображения index.html
+func handleFilter(w http.ResponseWriter, r *http.Request, usid int) {
+	log.Println("/filter", r.Method, r.RemoteAddr)
+	file, err := os.ReadFile("./web/index.html")
+	if err != nil {
+		file = []byte{}
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(file)
+}
+
+func handleGSFilter(w http.ResponseWriter, r *http.Request, usid int) {
+	log.Println("/stfltr", r.Method, r.RemoteAddr)
+	// usid := 391497468
+	// hash := get_hash(usid)
+	DATABASE, exists := os.LookupEnv("DATABASE")
+	if !exists {
+		log.Println("Нет DATABASE")
+	}
+	// Настройка соединения с базой данных
+	db, err := sql.Open("sqlite3", DATABASE)
+	if err != nil {
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
+	}
+	defer db.Close()
+
+	if r.Method != http.MethodPost {
+		log.Println("Запрос фильтра")
+
+		// Выполнение SQL-запроса
+		// sql := `SELECT wrkrule FROM usrs WHERE usid = $1;`
+		sql := `SELECT '{"name":"' || full_name ||' ('|| username || ')",' || REPLACE (wrkrule, '{"filter"', '"filter"') FROM usrs `
+		// wrkrule, err = db.Exec(sql, usid)
+		rows, err := db.Query(sql, usid)
+
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Ошибка выполнения запроса: %v", err), http.StatusInternalServerError)
+			log.Println("Ошибка выполнения запроса: %v", err)
+			return
+		}
+		defer rows.Close()
+
+		var wrkrule string
+		count := 0
+		for rows.Next() {
+			count++
+			if count > 1 {
+				log.Fatal(errors.New("/stfltr, more than one row wrkrule returned"))
+			}
+			if err := rows.Scan(&wrkrule); err != nil {
+				log.Fatal(err)
+			}
+		}
+		if count == 0 {
+			log.Println("/stfltr, no row wrkrule found")
+			usid = 0
+		}
+
+		log.Println(wrkrule)
+		// response := Response{Success: true, Message: wrkrule}
+		// w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Content-Type", "text")
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, wrkrule)
+		// json.NewEncoder(w).Encode(response)
+		return
+	} else {
+		log.Println("Запись фильтра")
+
+		bodyBytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			log.Fatal("Ошибка чтения Body", err)
+		}
+		filter := string(bodyBytes)
+		// Выполнение SQL-запроса
+		sql := `UPDATE usrs SET wrkrule = $1 WHERE usid = $2;`
+		_, err = db.Exec(sql, filter, usid)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Ошибка выполнения update: %v", err), http.StatusInternalServerError)
+			return
+		} else {
+			response := Response{Success: true, Message: "Filter updated successfully"}
+			w.Header().Set("Content-Type", "application/json")
+			// w.Header().Set("Content-Type", "text")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			// fmt.Fprintf(w, wrkrule)
+		}
+	}
+}
+
+// var flag bool = false
+
+// func authorized1(next func(http.ResponseWriter, *http.Request)) func(http.ResponseWriter, *http.Request) {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		if !flag {
+// 			http.Redirect(w, r, "/login", http.StatusSeeOther)
+// 			return
+// 		}
+// 		next(w, r)
+// 	}
 // }
 
-// func insertMessage(db *sql.DB, msg Message) error {
-// 	query := "INSERT INTO mess (id, content) VALUES ($1, $2)"
-// 	_, err := db.Exec(query, msg.ID, msg.Content)
-// 	return err
-// }
+func get_user(hash string) int {
+
+	DATABASE, exists := os.LookupEnv("DATABASE")
+	if !exists {
+		log.Fatalf("Нет DATABASE %v", exists)
+		return 0
+	}
+
+	// Настройка соединения с базой данных
+	db, err := sql.Open("sqlite3", DATABASE)
+	if err != nil {
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
+		return 0
+	}
+	defer db.Close()
+
+	sql := `SELECT usid FROM usrs WHERE hash = $1;`
+	// wrkrule, err = db.Exec(sql, usid)
+	rows, err := db.Query(sql, hash)
+
+	if err != nil {
+		log.Fatalf("Ошибка выполнения запроса: %v", err)
+		return 0
+	}
+	defer rows.Close()
+
+	var usid int
+	count := 0
+	for rows.Next() {
+		count++
+		if count > 1 {
+			log.Fatal(errors.New("get_user, more than one row returned"))
+		}
+		if err := rows.Scan(&usid); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if count == 0 {
+		log.Println("get_user, no user found")
+		usid = 0
+	}
+	return usid
+}
+
+func get_hash(usid int) (hash string) {
+
+	DATABASE, exists := os.LookupEnv("DATABASE")
+	if !exists {
+		log.Fatalf("Нет DATABASE %v", exists)
+		return "0"
+	}
+
+	// Настройка соединения с базой данных
+	db, err := sql.Open("sqlite3", DATABASE)
+	if err != nil {
+		log.Fatalf("Ошибка подключения к базе данных: %v", err)
+		return "0"
+	}
+	defer db.Close()
+
+	sql := `SELECT hash FROM usrs WHERE usid = $1;`
+	// wrkrule, err = db.Exec(sql, usid)
+	rows, err := db.Query(sql, usid)
+
+	if err != nil {
+		log.Fatalf("Ошибка выполнения запроса: %v", err)
+		return "0"
+	}
+	defer rows.Close()
+
+	count := 0
+	for rows.Next() {
+		count++
+		if count > 1 {
+			log.Fatal(errors.New("get_hash, more than one row returned"))
+		}
+		if err := rows.Scan(&hash); err != nil {
+			log.Fatal(err)
+		}
+	}
+	if count == 0 {
+		log.Println("get_hash, no hash found")
+		usid = 0
+	}
+	return hash
+}
+
+func handlTest(w http.ResponseWriter, r *http.Request, usid int) {
+	log.Println("/test", r.Method, r.RemoteAddr)
+
+	file, err := os.ReadFile("./web/test.html")
+	if err != nil {
+		file = []byte{}
+	}
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.WriteHeader(http.StatusOK)
+	w.Write(file)
+}
+
+func authorized(next func(http.ResponseWriter, *http.Request, int)) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("token")
+		if err != nil {
+			log.Println("Ошибка в чтении Cookie", err)
+		} else {
+			str := cookie.Value
+			hash, _ := url.QueryUnescape(str)
+			usid := get_user(hash)
+			log.Printf("usid from cookies hash %v", usid)
+			if usid == 0 {
+				http.Redirect(w, r, "/login", http.StatusSeeOther)
+				return
+			} else {
+				next(w, r, usid)
+				return
+			}
+		}
+
+		hash := r.URL.Query().Get("hash")
+		log.Println(hash)
+
+		usid := get_user(hash)
+		log.Printf("usid from url hash %v", usid)
+		if usid == 0 {
+			http.Redirect(w, r, "/login", http.StatusSeeOther)
+			return
+		}
+
+		livingTime := 60 * time.Minute
+		expiration := time.Now().Add(livingTime)
+		// Перейти на https и установить Secure: true
+		// cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration, Path: "/test", Secure: false}
+		cookie1 := http.Cookie{Name: "token", Value: url.QueryEscape(hash), Expires: expiration}
+
+		http.SetCookie(w, &cookie1)
+		next(w, r, usid)
+
+	}
+}
 
 func Server() {
 	DATABASE, exists := os.LookupEnv("DATABASE")
@@ -182,7 +418,29 @@ func Server() {
 		}
 	})
 
+	http.HandleFunc("/login", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "text/html")
+		w.Header().Set("charset", "utf8")
+		w.WriteHeader(http.StatusOK)
+		log.Println("Войдите по ссылке Телеграм-бота...")
+		rustring := "Войдите по ссылке Телеграм-бота 'Настроить фильтры' https://t.me/Recom777bot"
+		// smile := '😀'
+		fmt.Fprintf(w, rustring)
+		// fmt.Fprintf(w, "%q", smile)
+	})
+
 	http.HandleFunc("/svmess", handleSVMess)
+	http.HandleFunc("/stfltr", authorized(handleGSFilter))
+	http.HandleFunc("/filter", authorized(handleFilter))
+	http.HandleFunc("/test", authorized(handlTest))
+
+	fs := http.FileServer(http.Dir("./web/assets"))
+	// Путь для файлов js-скриптов и стилей
+	http.Handle("/assets/", http.StripPrefix("/assets", fs))
+
+	fslogo := http.FileServer(http.Dir("./web"))
+	// Путь для файлов js-скриптов и стилей
+	http.Handle("/", http.StripPrefix("/", fslogo))
 
 	// Запуск сервера
 	PORT, exists := os.LookupEnv("PORT")
