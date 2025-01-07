@@ -236,8 +236,6 @@ func get_user(hash string) int {
 
 	sql := `SELECT usid FROM usrs WHERE hash = $1;`
 	// wrkrule, err = db.Exec(sql, usid)
-	log.Println("sql: ", sql)
-	log.Println("hash: ", hash)
 	rows, err := db.Query(sql, hash)
 
 	if err != nil {
@@ -347,13 +345,12 @@ func authorized(next func(http.ResponseWriter, *http.Request, int)) func(http.Re
 		}
 
 		hash := r.URL.Query().Get("hash")
-		log.Println(hash)
-
 		usid := get_user(hash)
 		log.Printf("usid from url hash %v", usid)
 		if usid != 0 {
 			set_cookie(w, hash)
 			next(w, r, usid)
+			return
 		}
 
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
