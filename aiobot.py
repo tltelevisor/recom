@@ -305,7 +305,7 @@ async def send_mess():
     usrs = get_users_to_send()
     logger.info(f"Пользователи: {usrs}")
     for eu in usrs:
-        rule = get_sndrule(eu[0])
+        # rule = get_sndrule(eu[0])
         mess = get_mess_to_send(eu[0])
         logger.info(f"Сообщения: {mess}")
         for em in mess:
