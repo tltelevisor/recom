@@ -10,7 +10,7 @@ def check_openai_api_key(api_key = API_KEY):
     try:
         client.models.list()
     except openai.AuthenticationError as err:
-        logger.error(f'err: {err}, api_key: {api_key}')
+        logger.info(f'Ключ API_KEY не действителен')
         return False
     else:
         return True
