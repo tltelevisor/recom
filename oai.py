@@ -42,7 +42,7 @@ def PhrGPT(phrase, mess):
         completion = response.choices[0].message.parsed
         return True, completion.is_to_send
     else:
-        return False
+        return False, None
 
 def AdvGPT(mess):
     class QuestionAnswer(BaseModel):
