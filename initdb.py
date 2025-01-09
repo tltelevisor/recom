@@ -367,11 +367,14 @@ def add_adv_words():
                     uspr_id_lst.append(em[0])
     if len(uspr_id_lst) > 0:
         adv_lst_text = str(adv_lst)
+        logger.info(adv_lst_text)
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
         for ep in uspr_id_lst:
             cursor.execute(f"UPDATE uspr SET iswrk = 1 WHERE prid = {ep}")
-        cursor.execute(f"UPDATE config SET value = '{adv_lst_text}' WHERE name = 'adv_lst'")
+        sql = f"UPDATE config SET value = '{adv_lst_text}' WHERE name = 'adv_lst'"
+        logger.info(sql)
+        cursor.execute(sql)
         conn.commit()
         conn.close()
         logger.info(f'Open AI GPT добавлено {len(uspr_id_lst)} слов в adv_lst')
