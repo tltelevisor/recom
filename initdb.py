@@ -371,7 +371,7 @@ def add_adv_words():
         cursor = conn.cursor()
         for ep in uspr_id_lst:
             cursor.execute(f"UPDATE uspr SET iswrk = 1 WHERE prid = {ep}")
-        cursor.execute(f"UPDATE config SET value = {adv_lst_text} WHERE name = 'adv_lst'")
+        cursor.execute(f"UPDATE config SET value = '{adv_lst_text}' WHERE name = 'adv_lst'")
         conn.commit()
         conn.close()
         logger.info(f'Open AI GPT добавлено {len(uspr_id_lst)} слов в adv_lst')
