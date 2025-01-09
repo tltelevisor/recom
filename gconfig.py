@@ -20,5 +20,8 @@ NAME = os.environ.get("NAME")
 # SVMESS_URL='http://localhost:8384/svmess'
 CHLST_URL='http://213.142.146.123:8384/chlst'
 SVMESS_URL='http://213.142.146.123:8384/svmess'
-MSG_LIMIT = 1
+
+# Максимально количество сообщений, которое выбирается за один запрос из канала
+# (этот параментр для сервиса getremserver.py)
+MSG_LIMIT = 5
 

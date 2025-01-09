@@ -34,6 +34,9 @@ CHANNELS = ['anatoly_nesmiyan', 'aviatorshina',]
 URL = os.environ.get("URL")
 PORT = os.environ.get("PORT")
 
-MSG_LIMIT = 1
+# Максимально количество сообщений, которое выбирается за один запрос из канала
+# (этот параментр для сервиса getremserver.py)
+MSG_LIMIT = 5
 
-URL_CH = 'http://example.com/foo/bar'
+# С задержкой на такое количество часов будут удалены сообщения 
+HOURS_TO_LIVE = 24

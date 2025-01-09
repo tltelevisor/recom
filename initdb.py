@@ -4,6 +4,8 @@ from telegram.ext import Updater, CommandHandler, CallbackQueryHandler, MessageH
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import sqlite3, asyncio
 from config import logger, DATABASE, CHANNELS, API_ID, API_HASH, NAME
+from oai import AdvGPT
+import ast
 #from telethon import TelegramClient
 
   
@@ -31,6 +33,11 @@ from config import logger, DATABASE, CHANNELS, API_ID, API_HASH, NAME
 # Создание базы данных для хранения предпочтений пользователей
 async def init_db():
     try:
+        config = '''CREATE TABLE IF NOT EXISTS config (
+                        name TEXT PRIMARY KEY,
+                        value TEXT
+                    )''' 
+        config_in_vl = '''REPLACE INTO config (name, value) VALUES ('adv_lst', '["реклама","нож",]')'''
         usrs = '''CREATE TABLE IF NOT EXISTS usrs (
                             usid INTEGER PRIMARY KEY,
                             username TEXT,
@@ -90,6 +97,7 @@ async def init_db():
                     text TEXT,
                     sign TEXT,
                     dtadd datetime,
+                    iswrk BOOLEAN default 0,
                     FOREIGN KEY (usid) REFERENCES usrs(usid),
                     FOREIGN KEY (chid) REFERENCES chls(chid),
                     FOREIGN KEY (msid) REFERENCES mess(msid)
@@ -97,6 +105,8 @@ async def init_db():
                     '''
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
+        cursor.execute(config)
+        cursor.execute(config_in_vl)
         cursor.execute(usrs)
         cursor.execute(chls)
         cursor.execute(usch)
@@ -301,19 +311,6 @@ def get_users_to_send():
     conn.close()
     return rows
 
-def work_mess(usr, mess):
-    rule = get_wrkrule(usr)
-    snt_mess = get_sent_mess(usr)
-    # mess_tsnd = f(rule, mess, snt_mess)
-    mess_tsnd = mess
-    for em in mess_tsnd:
-        conn = sqlite3.connect(DATABASE)
-        cursor = conn.cursor()
-        sql = f"UPDATE mesus SET iswrk=1, dtwrk='{datetime.now().isoformat()}', istsnd=1 WHERE chid={em[0]} AND msid={em[1]} AND usid={usr};"
-        cursor.execute(sql)
-        conn.commit()
-        conn.close()
-
 def save_sent_mess(usr, em):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
@@ -339,6 +336,35 @@ def del_all_ch(usid):
     conn.commit()
     conn.close()
     
+def add_adv_words():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute("SELECT value FROM config WHERE name = 'adv_lst'")
+    adv_lst_text = cursor.fetchone()[0]
+    sql = '''SELECT prid, "text" FROM uspr WHERE sign='ADVERTISING' AND not iswrk;'''
+    cursor.execute(sql)
+    uspr = cursor.fetchall()
+    conn.commit()
+    conn.close()
+    adv_lst = ast.literal_eval(adv_lst_text)
+    uspr_id_lst = []
+    for em in uspr:
+        adv_gpr = AdvGPT(em[1])
+        if adv_gpr[0]:
+            for ew in adv_gpr[1]:
+                if ew not in adv_lst:
+                    adv_lst.append(ew)
+                    uspr_id_lst.append(em[0])
+    if len(uspr_id_lst) > 0:
+        adv_lst_text = str(adv_lst)
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()
+        for ep in uspr_id_lst:
+            cursor.execute(f"UPDATE uspr SET iswrk = 1 WHERE id = {ep}")
+        cursor.execute(f"UPDATE config SET value = {adv_lst_text} WHERE name = 'adv_lst'")
+        conn.commit()
+        conn.close()
+        logger.info(f'Open AI GPT добавлено {len(uspr_id_lst)} слов в adv_lst')
 
 if __name__ == '__main__':
     res = asyncio.run(init_db())

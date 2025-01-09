@@ -7,9 +7,9 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.types.input_file import FSInputFile
 from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command
-from pprint import pprint
+from oai import AdvGPT
 from initdb import get_all_channels, get_user_channels, add_all, chedb, get_diff_all_user, get_users, del_all_ch, get_status
-from initdb import get_mess_to_send, get_users_to_send, get_text_mess_db, save_sent_mess, get_sndrule, get_ch_name_title
+from initdb import get_mess_to_send, get_users_to_send, get_text_mess_db, save_sent_mess, get_sndrule, get_ch_name_title, add_adv_words
 from config import logger, BOT_TOKEN, DATABASE, URL, PORT
 from telegram.helpers import escape_markdown
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -307,7 +307,7 @@ def date_to_local(iso8601_string, timezone_difference_hours = 3):
     return adjusted_dt.strftime("%Y-%m-%d %H:%M:%S")
 
 # kbmess = get_kb({"topic+":"+Тема","topic-":"-Тема","often+":"Чаще этот канал", "often-":"Реже этот канал"})
-kbmess = get_kb({"topic+":"Тема+","topic-":"Тема-"})
+kbmess = get_kb({"advrt":"Это реклама"})
 async def send_mess():
     logger.info(f"Очередная итерация отправки")
     usrs = get_users_to_send()
@@ -337,9 +337,21 @@ async def send_mess():
             save_sent_mess(eu[0], em)
             sleep(5)
 
-@dp.callback_query(F.data.in_(['topic+','topic-','often+','often-']) )
+@dp.callback_query(F.data.in_(['topic+','topic-','often+','often-','advrt']) )
 async def button_press(call: types.CallbackQuery):
     last_log(call.from_user.id)
+    if call.data == 'advrt':
+        sign = 'ADVERTISING'
+        conn = sqlite3.connect(DATABASE)
+        cursor = conn.cursor()        
+        cursor.execute(f"REPLACE INTO uspr (usid, chid, msid, text, sign, dtadd) "
+                       f"VALUES (?, ?, ?, ?, ?, ?)", 
+                       (call.from_user.id, 0, 0, call.message.text, sign, datetime.now().isoformat()))
+        conn.commit()
+        conn.close()
+        add_adv_words()         
+        mess = (f"Сообщение добавлено для улучшения фильтра рекламы")
+        await call.message.answer(mess)
     if call.data in ['topic+','topic-','often+','often-']:
         mess = (f"Эта функция пока в разработке")
         await call.message.answer(mess)
