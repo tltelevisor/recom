@@ -64,7 +64,7 @@ def AdvGPT(mess):
         completion = response.choices[0].message.parsed
         return True, completion.adv_word_list
     else:
-        return False
+        return False, None
 
 
 # def context(file_list):
