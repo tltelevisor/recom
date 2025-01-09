@@ -147,7 +147,7 @@ export default function App() {
         <WordList words={Bllist} setWords={setBlList}></WordList>
         <p></p>
         <label htmlFor="textGPT">
-          Фраза для ChatGPT для фильтрации сообщений (в ответ ChatGPT или пропустит или не пропустит сообщение в ленту). Фраза построена по шаблону: "Это сообщение "--анализируемое сообщение--" --введенная фраза--. Ответь "да" или "нет"
+          Фраза для ChatGPT для фильтрации сообщений
         </label>
         <p></p>
         <textarea
