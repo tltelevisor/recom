@@ -1,6 +1,6 @@
 from config import logger, DATABASE, HOURS_TO_LIVE
 #from telethon import TelegramClient
-from initdb import get_users_to_work, get_mess_to_work, get_wrkrule, get_text_mess_db
+from initdb import get_users_to_work, get_mess_to_work, get_wrkrule, get_text_mess_db, get_config_param
 from oai import PhrGPT
 from datetime import datetime, timedelta
 from timesleep import time_to_sleep_f
@@ -19,18 +19,11 @@ from nltk.stem.snowball import SnowballStemmer
 stop_words = set(stopwords.words('russian'))
 stemmer = SnowballStemmer("russian")
 
-def get_config_param(param):
-    conn = sqlite3.connect(DATABASE)
-    cursor = conn.cursor()
-    sql = f'''SELECT value FROM config WHERE name = "{param}";'''
-    cursor.execute(sql)
-    rows = cursor.fetchone()[0]
-    conn.commit()
-    conn.close()
-    return rows
+
 
 def isadv(mess_tok):
-    adv_lst = get_config_param('adv_lst')
+    adv_lst_text = get_config_param('adv_lst')
+    adv_lst = ast.literal_eval(adv_lst_text)
     for ew in adv_lst:
         tokens = word_tokenize(ew)
         logger.info(tokens)
