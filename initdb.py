@@ -125,7 +125,6 @@ def get_config_param(param):
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
     sql = f'''SELECT value FROM config WHERE name = "{param}";'''
-    logger.info(sql)
     cursor.execute(sql)
     rows = cursor.fetchone()[0]
     conn.commit()

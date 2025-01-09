@@ -26,7 +26,6 @@ def isadv(mess_tok):
     adv_lst = ast.literal_eval(adv_lst_text)
     for ew in adv_lst:
         tokens = word_tokenize(ew)
-        logger.info(tokens)
         stemmed_words = stemmer.stem(tokens[0])
         if stemmed_words in mess_tok:
             return 1
@@ -99,7 +98,7 @@ def work_mess(wrkrule, text):
         else:
             logger.info(f"ChatGPT не доступен, сообщение к отправке")
             return 1      
-    return 0
+    return 1
 
 def work_serv():
     logger.info(f"Start workserver")
