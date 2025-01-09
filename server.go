@@ -146,7 +146,7 @@ func handleGSFilter(w http.ResponseWriter, r *http.Request, usid int) {
 
 		// Выполнение SQL-запроса
 		// sql := `SELECT wrkrule FROM usrs WHERE usid = $1;`
-		sql := `SELECT '{"name":"' || full_name ||' ('|| username || ')",' || REPLACE (wrkrule, '{"filter"', '"filter"') FROM usrs `
+		sql := `SELECT '{"name":"' || full_name ||' ('|| username || ')",' || REPLACE (wrkrule, '{"filter"', '"filter"') FROM usrs WHERE usid = $1;`
 		// wrkrule, err = db.Exec(sql, usid)
 		rows, err := db.Query(sql, usid)
 
