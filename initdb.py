@@ -371,7 +371,7 @@ def add_adv_words():
         conn = sqlite3.connect(DATABASE)
         cursor = conn.cursor()
         for ep in uspr_id_lst:
-            cursor.execute(f"UPDATE uspr SET iswrk = 1 WHERE id = {ep}")
+            cursor.execute(f"UPDATE uspr SET iswrk = 1 WHERE prid = {ep}")
         cursor.execute(f"UPDATE config SET value = {adv_lst_text} WHERE name = 'adv_lst'")
         conn.commit()
         conn.close()
